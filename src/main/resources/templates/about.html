@@ -1,0 +1,880 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Learn — Psyche</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,700;1,400&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" th:href="@{/css/style.css}"/>
+  <style>
+    /* ── Hero ── */
+    .learn-hero {
+      background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #a855f7 100%);
+      border-radius: 20px;
+      padding: 4rem 3rem;
+      text-align: center;
+      margin-bottom: 2.5rem;
+      position: relative;
+      overflow: hidden;
+    }
+    .learn-hero::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.05'%3E%3Ccircle cx='30' cy='30' r='20'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+      pointer-events: none;
+    }
+    .learn-hero-badge {
+      display: inline-block;
+      background: rgba(255,255,255,0.2);
+      color: #fff;
+      border: 1px solid rgba(255,255,255,0.3);
+      padding: .35rem 1rem;
+      border-radius: 100px;
+      font-size: .8rem;
+      font-weight: 600;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      margin-bottom: 1.25rem;
+    }
+    .learn-hero h1 {
+      font-size: 2.6rem;
+      color: #fff;
+      line-height: 1.15;
+      margin-bottom: 1rem;
+    }
+    .learn-hero p {
+      color: rgba(255,255,255,0.85);
+      font-size: 1.05rem;
+      max-width: 600px;
+      margin: 0 auto;
+      line-height: 1.7;
+    }
+
+    /* ── Section headings ── */
+    .section-label {
+      display: inline-flex;
+      align-items: center;
+      gap: .5rem;
+      font-size: .75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .1em;
+      color: var(--accent);
+      background: #eef2ff;
+      padding: .35rem .9rem;
+      border-radius: 100px;
+      margin-bottom: 1rem;
+    }
+    .big-heading {
+      font-size: 1.9rem;
+      color: var(--text);
+      margin-bottom: .75rem;
+    }
+    .big-sub {
+      color: var(--muted);
+      font-size: .98rem;
+      line-height: 1.7;
+      max-width: 680px;
+    }
+
+    /* ── MBTI Section ── */
+    .mbti-intro-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.5rem;
+      margin-top: 2rem;
+    }
+    @media(max-width: 750px) { .mbti-intro-grid { grid-template-columns: 1fr; } }
+
+    .mbti-why-card {
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: var(--r);
+      padding: 1.5rem;
+      box-shadow: var(--shadow);
+    }
+    .mbti-why-card .card-icon {
+      width: 44px; height: 44px;
+      border-radius: 12px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.3rem;
+      margin-bottom: 1rem;
+    }
+    .mbti-why-card h3 {
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: .5rem;
+    }
+    .mbti-why-card p {
+      color: var(--muted);
+      font-size: .88rem;
+      line-height: 1.65;
+    }
+
+    /* ── MBTI Types grid ── */
+    .mbti-types-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: .75rem;
+      margin-top: 1.5rem;
+    }
+    @media(max-width: 800px) { .mbti-types-grid { grid-template-columns: repeat(2, 1fr); } }
+    @media(max-width: 480px) { .mbti-types-grid { grid-template-columns: 1fr 1fr; } }
+
+    .mbti-type-chip {
+      background: #fff;
+      border: 1.5px solid var(--border);
+      border-radius: 10px;
+      padding: .85rem 1rem;
+      text-align: center;
+      transition: all .2s;
+      cursor: default;
+    }
+    .mbti-type-chip:hover {
+      border-color: var(--accent);
+      box-shadow: 0 4px 12px rgba(99,102,241,.1);
+      transform: translateY(-2px);
+    }
+    .mtype {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: var(--accent);
+      letter-spacing: .05em;
+    }
+    .mtype-name {
+      font-size: .72rem;
+      color: var(--muted);
+      margin-top: .2rem;
+    }
+    .mtype-group {
+      font-size: .65rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+      margin-top: .3rem;
+      padding: .15rem .5rem;
+      border-radius: 100px;
+      display: inline-block;
+    }
+    .g-analyst  { background: #eef2ff; color: #4f46e5; }
+    .g-diplomat { background: #fdf4ff; color: #9333ea; }
+    .g-sentinel { background: #f0fdf4; color: #16a34a; }
+    .g-explorer { background: #fff7ed; color: #ea580c; }
+
+    /* ── Traits ── */
+    .traits-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 1.25rem;
+      margin-top: 1.5rem;
+    }
+    .trait-card {
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: var(--shadow);
+      display: grid;
+      grid-template-columns: 6px 1fr;
+    }
+    .trait-stripe { width: 6px; }
+    .trait-body { padding: 1.75rem 1.75rem 1.75rem 1.5rem; }
+    .trait-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 1rem;
+      margin-bottom: 1rem;
+      flex-wrap: wrap;
+    }
+    .trait-title-row { display: flex; align-items: center; gap: .75rem; }
+    .trait-emoji { font-size: 1.6rem; }
+    .trait-name { font-size: 1.2rem; font-weight: 700; color: var(--text); }
+    .trait-full-name { font-size: .78rem; color: var(--muted); margin-top: .1rem; }
+    .trait-range-badge {
+      font-size: .75rem;
+      font-weight: 600;
+      padding: .3rem .8rem;
+      border-radius: 100px;
+      background: #f1f5f9;
+      color: var(--muted);
+      flex-shrink: 0;
+    }
+    .trait-desc {
+      color: var(--text);
+      font-size: .93rem;
+      line-height: 1.7;
+      margin-bottom: 1.25rem;
+    }
+    .trait-spectrum {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: .75rem;
+      padding: 1rem;
+      background: #f8fafc;
+      border-radius: 10px;
+      margin-bottom: 1.25rem;
+    }
+    .spectrum-side { }
+    .spectrum-label {
+      font-size: .7rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+      margin-bottom: .35rem;
+    }
+    .spectrum-label.high { color: var(--success); }
+    .spectrum-label.low  { color: var(--danger); }
+    .spectrum-label.high-neu { color: var(--danger); }
+    .spectrum-label.low-neu  { color: var(--success); }
+    .spectrum-traits { list-style: none; display: flex; flex-direction: column; gap: .25rem; }
+    .spectrum-traits li {
+      font-size: .83rem;
+      color: var(--muted);
+      padding-left: 1.1rem;
+      position: relative;
+    }
+    .spectrum-traits li::before {
+      content: '→';
+      position: absolute;
+      left: 0;
+      font-size: .7rem;
+      color: var(--dim);
+    }
+    .trait-improve {
+      background: linear-gradient(135deg, #eef2ff, #faf5ff);
+      border: 1px solid #c7d2fe;
+      border-radius: 10px;
+      padding: 1rem 1.25rem;
+    }
+    .trait-improve-title {
+      font-size: .78rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .07em;
+      color: var(--accent);
+      margin-bottom: .6rem;
+    }
+    .trait-improve-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: .3rem;
+    }
+    .trait-improve-list li {
+      font-size: .84rem;
+      color: var(--text);
+      padding-left: 1.2rem;
+      position: relative;
+      line-height: 1.5;
+    }
+    .trait-improve-list li::before {
+      content: '✦';
+      position: absolute;
+      left: 0;
+      font-size: .6rem;
+      color: var(--accent);
+      top: .25rem;
+    }
+
+    /* ── Benefits ── */
+    .benefits-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1.25rem;
+      margin-top: 1.5rem;
+    }
+    @media(max-width: 800px) { .benefits-grid { grid-template-columns: 1fr 1fr; } }
+    @media(max-width: 500px)  { .benefits-grid { grid-template-columns: 1fr; } }
+
+    .benefit-card {
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: var(--r);
+      padding: 1.5rem;
+      box-shadow: var(--shadow);
+      transition: all .2s;
+    }
+    .benefit-card:hover {
+      box-shadow: var(--shadow-lg);
+      transform: translateY(-3px);
+    }
+    .benefit-icon {
+      font-size: 2rem;
+      margin-bottom: .85rem;
+      display: block;
+    }
+    .benefit-card h3 {
+      font-size: .98rem;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: .5rem;
+    }
+    .benefit-card p {
+      font-size: .85rem;
+      color: var(--muted);
+      line-height: 1.6;
+    }
+
+    /* ── CTA ── */
+    .cta-box {
+      background: linear-gradient(135deg, #6366f1, #8b5cf6);
+      border-radius: 20px;
+      padding: 3rem 2rem;
+      text-align: center;
+      margin-top: 2.5rem;
+    }
+    .cta-box h2 { color: #fff; font-size: 1.9rem; margin-bottom: .75rem; }
+    .cta-box p  { color: rgba(255,255,255,.85); font-size: .98rem; margin-bottom: 1.75rem; max-width: 500px; margin-left: auto; margin-right: auto; }
+    .btn-white {
+      display: inline-block;
+      background: #fff;
+      color: var(--accent);
+      font-weight: 700;
+      font-size: .95rem;
+      padding: .85rem 2rem;
+      border-radius: 10px;
+      border: none;
+      cursor: pointer;
+      transition: all .2s;
+    }
+    .btn-white:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0,0,0,.15); }
+
+    /* ── Divider ── */
+    .page-divider {
+      height: 1px;
+      background: var(--border);
+      margin: 2.5rem 0;
+    }
+
+    /* ── MBTI dimensions ── */
+    .dim-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 1rem;
+      margin-top: 1.5rem;
+    }
+    @media(max-width: 650px) { .dim-grid { grid-template-columns: 1fr; } }
+    .dim-card {
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: var(--r);
+      padding: 1.25rem;
+      box-shadow: var(--shadow);
+    }
+    .dim-vs {
+      display: flex;
+      align-items: center;
+      gap: .75rem;
+      margin-bottom: .9rem;
+    }
+    .dim-letter {
+      width: 38px; height: 38px;
+      border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      font-family: 'Playfair Display', serif;
+      font-size: 1.2rem;
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+    .dim-slash { color: var(--dim); font-size: 1.1rem; font-weight: 300; }
+    .dim-desc  { font-size: .83rem; color: var(--muted); line-height: 1.55; }
+    .dim-title { font-size: .9rem; font-weight: 600; color: var(--text); margin-bottom: .3rem; }
+
+    /* scroll to section */
+    html { scroll-behavior: smooth; }
+  </style>
+</head>
+<body class="app-body">
+
+<nav class="navbar">
+  <a href="/dashboard" class="nav-brand">✦ Psyche</a>
+  <div class="nav-links">
+    <a href="/dashboard" class="nav-link">Dashboard</a>
+    <a href="/quiz"      class="nav-link">Quiz</a>
+    <a href="/learn"     class="nav-link active">Learn</a>
+    <a href="/profile"   class="nav-link">Profile</a>
+    <form action="/logout" method="post" style="display:inline">
+      <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+      <button type="submit" class="nav-link nav-logout"
+              style="background:none;border:none;cursor:pointer;font-family:inherit;font-size:.9rem;padding:.4rem .75rem;border-radius:6px">
+        Logout
+      </button>
+    </form>
+  </div>
+</nav>
+
+<main class="app-main">
+
+  <!-- Hero -->
+  <div class="learn-hero">
+    <div class="learn-hero-badge">📚 Your Complete Guide</div>
+    <h1>Understanding Your Mind<br/>with Psyche</h1>
+    <p>Learn what MBTI is, why personality science matters, what the Big Five traits reveal about you, and how Psyche turns that knowledge into real personal growth.</p>
+  </div>
+
+  <!-- Quick Nav -->
+  <div class="section-card" style="padding:1.25rem 1.5rem; margin-bottom:2rem;">
+    <div style="display:flex;gap:.75rem;flex-wrap:wrap;align-items:center;">
+      <span style="font-size:.8rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;">Jump to:</span>
+      <a href="#mbti"   style="font-size:.85rem;font-weight:500;color:var(--accent);background:#eef2ff;padding:.3rem .85rem;border-radius:100px;border:1px solid #c7d2fe;">What is MBTI?</a>
+      <a href="#why"    style="font-size:.85rem;font-weight:500;color:var(--accent);background:#eef2ff;padding:.3rem .85rem;border-radius:100px;border:1px solid #c7d2fe;">Why It Matters</a>
+      <a href="#traits" style="font-size:.85rem;font-weight:500;color:var(--accent);background:#eef2ff;padding:.3rem .85rem;border-radius:100px;border:1px solid #c7d2fe;">The 5 Traits</a>
+      <a href="#benefits" style="font-size:.85rem;font-weight:500;color:var(--accent);background:#eef2ff;padding:.3rem .85rem;border-radius:100px;border:1px solid #c7d2fe;">Psyche Benefits</a>
+    </div>
+  </div>
+
+  <!-- ═══════════════ MBTI ═══════════════ -->
+  <div id="mbti">
+    <div class="section-label">🧠 Part 1</div>
+    <h2 class="big-heading">What is MBTI?</h2>
+    <p class="big-sub">The Myers-Briggs Type Indicator (MBTI) is one of the world's most widely used personality frameworks. Developed by Isabel Briggs Myers and her mother Katharine Cook Briggs, it's based on Carl Jung's theory of psychological types and categorizes people into <strong>16 distinct personality types</strong> using four key dimensions.</p>
+
+    <!-- 4 dimensions -->
+    <div class="dim-grid">
+      <div class="dim-card">
+        <div class="dim-vs">
+          <div class="dim-letter" style="background:#eef2ff;color:#6366f1;">E</div>
+          <span class="dim-slash">/</span>
+          <div class="dim-letter" style="background:#f8fafc;color:#64748b;">I</div>
+          <div>
+            <div class="dim-title">Extraversion vs. Introversion</div>
+          </div>
+        </div>
+        <p class="dim-desc">How do you recharge your energy? <strong>Extraverts</strong> gain energy from social interactions and external stimulation. <strong>Introverts</strong> recharge through solitude, reflection, and inner focus.</p>
+      </div>
+      <div class="dim-card">
+        <div class="dim-vs">
+          <div class="dim-letter" style="background:#fdf4ff;color:#9333ea;">S</div>
+          <span class="dim-slash">/</span>
+          <div class="dim-letter" style="background:#f8fafc;color:#64748b;">N</div>
+          <div>
+            <div class="dim-title">Sensing vs. Intuition</div>
+          </div>
+        </div>
+        <p class="dim-desc">How do you take in information? <strong>Sensors</strong> focus on concrete facts, details, and present reality. <strong>Intuitives</strong> see patterns, possibilities, and future potential.</p>
+      </div>
+      <div class="dim-card">
+        <div class="dim-vs">
+          <div class="dim-letter" style="background:#f0fdf4;color:#16a34a;">T</div>
+          <span class="dim-slash">/</span>
+          <div class="dim-letter" style="background:#f8fafc;color:#64748b;">F</div>
+          <div>
+            <div class="dim-title">Thinking vs. Feeling</div>
+          </div>
+        </div>
+        <p class="dim-desc">How do you make decisions? <strong>Thinkers</strong> rely on logic, objective analysis, and principles. <strong>Feelers</strong> prioritize values, empathy, and the impact on people.</p>
+      </div>
+      <div class="dim-card">
+        <div class="dim-vs">
+          <div class="dim-letter" style="background:#fff7ed;color:#ea580c;">J</div>
+          <span class="dim-slash">/</span>
+          <div class="dim-letter" style="background:#f8fafc;color:#64748b;">P</div>
+          <div>
+            <div class="dim-title">Judging vs. Perceiving</div>
+          </div>
+        </div>
+        <p class="dim-desc">How do you approach life? <strong>Judgers</strong> prefer structure, planning, and decisiveness. <strong>Perceivers</strong> embrace flexibility, spontaneity, and keeping options open.</p>
+      </div>
+    </div>
+
+    <!-- 16 types -->
+    <div style="margin-top:2rem;">
+      <h3 style="font-size:1.1rem;color:var(--text);margin-bottom:.5rem;">The 16 Personality Types</h3>
+      <p style="color:var(--muted);font-size:.88rem;margin-bottom:1rem;">These four dimensions combine to form 16 unique types, grouped into four temperament families:</p>
+      <div class="mbti-types-grid">
+        <div class="mbti-type-chip"><div class="mtype">INTJ</div><div class="mtype-name">The Architect</div><div class="mtype-group g-analyst">Analyst</div></div>
+        <div class="mbti-type-chip"><div class="mtype">INTP</div><div class="mtype-name">The Logician</div><div class="mtype-group g-analyst">Analyst</div></div>
+        <div class="mbti-type-chip"><div class="mtype">ENTJ</div><div class="mtype-name">The Commander</div><div class="mtype-group g-analyst">Analyst</div></div>
+        <div class="mbti-type-chip"><div class="mtype">ENTP</div><div class="mtype-name">The Debater</div><div class="mtype-group g-analyst">Analyst</div></div>
+        <div class="mbti-type-chip"><div class="mtype">INFJ</div><div class="mtype-name">The Advocate</div><div class="mtype-group g-diplomat">Diplomat</div></div>
+        <div class="mbti-type-chip"><div class="mtype">INFP</div><div class="mtype-name">The Mediator</div><div class="mtype-group g-diplomat">Diplomat</div></div>
+        <div class="mbti-type-chip"><div class="mtype">ENFJ</div><div class="mtype-name">The Protagonist</div><div class="mtype-group g-diplomat">Diplomat</div></div>
+        <div class="mbti-type-chip"><div class="mtype">ENFP</div><div class="mtype-name">The Campaigner</div><div class="mtype-group g-diplomat">Diplomat</div></div>
+        <div class="mbti-type-chip"><div class="mtype">ISTJ</div><div class="mtype-name">The Logistician</div><div class="mtype-group g-sentinel">Sentinel</div></div>
+        <div class="mbti-type-chip"><div class="mtype">ISFJ</div><div class="mtype-name">The Defender</div><div class="mtype-group g-sentinel">Sentinel</div></div>
+        <div class="mbti-type-chip"><div class="mtype">ESTJ</div><div class="mtype-name">The Executive</div><div class="mtype-group g-sentinel">Sentinel</div></div>
+        <div class="mbti-type-chip"><div class="mtype">ESFJ</div><div class="mtype-name">The Consul</div><div class="mtype-group g-sentinel">Sentinel</div></div>
+        <div class="mbti-type-chip"><div class="mtype">ISTP</div><div class="mtype-name">The Virtuoso</div><div class="mtype-group g-explorer">Explorer</div></div>
+        <div class="mbti-type-chip"><div class="mtype">ISFP</div><div class="mtype-name">The Adventurer</div><div class="mtype-group g-explorer">Explorer</div></div>
+        <div class="mbti-type-chip"><div class="mtype">ESTP</div><div class="mtype-name">The Entrepreneur</div><div class="mtype-group g-explorer">Explorer</div></div>
+        <div class="mbti-type-chip"><div class="mtype">ESFP</div><div class="mtype-name">The Entertainer</div><div class="mtype-group g-explorer">Explorer</div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="page-divider"></div>
+
+  <!-- ═══════════════ WHY ═══════════════ -->
+  <div id="why">
+    <div class="section-label">💡 Part 2</div>
+    <h2 class="big-heading">Why Does Personality Matter?</h2>
+    <p class="big-sub">Understanding your personality type is not just a fun exercise — it's a powerful tool for self-awareness, better relationships, and intentional growth.</p>
+
+    <div class="mbti-intro-grid">
+      <div class="mbti-why-card">
+        <div class="card-icon" style="background:#eef2ff;">🪞</div>
+        <h3>Self-Awareness First</h3>
+        <p>Knowing your personality type helps you understand <em>why</em> you think, feel, and behave the way you do. It removes self-judgment and replaces it with understanding — you're not "broken," you're wired differently.</p>
+      </div>
+      <div class="mbti-why-card">
+        <div class="card-icon" style="background:#fdf4ff;">🤝</div>
+        <h3>Better Relationships</h3>
+        <p>When you understand your own type and learn about others', communication becomes easier. You gain empathy for people who process the world differently — reducing conflict at work, at home, and in friendships.</p>
+      </div>
+      <div class="mbti-why-card">
+        <div class="card-icon" style="background:#f0fdf4;">🎯</div>
+        <h3>Smarter Career Choices</h3>
+        <p>Different types thrive in different environments. Knowing your strengths and preferences helps you pick roles where you'll naturally excel — rather than spending years in a mismatch.</p>
+      </div>
+      <div class="mbti-why-card">
+        <div class="card-icon" style="background:#fff7ed;">🌱</div>
+        <h3>Targeted Self-Growth</h3>
+        <p>Generic advice rarely sticks because it ignores who you are. Personality-based growth focuses your energy on the specific areas where improvement will have the biggest impact on <em>your</em> life.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="page-divider"></div>
+
+  <!-- ═══════════════ 5 TRAITS ═══════════════ -->
+  <div id="traits">
+    <div class="section-label">🔬 Part 3</div>
+    <h2 class="big-heading">The Big Five Personality Traits</h2>
+    <p class="big-sub">While MBTI gives you a type, the <strong>Big Five (OCEAN)</strong> model — backed by decades of scientific research — measures your personality across five continuous dimensions. Psyche uses these traits to build your personalized habit plan.</p>
+
+    <div class="traits-grid">
+
+      <!-- Openness -->
+      <div class="trait-card">
+        <div class="trait-stripe" style="background:#6366f1;"></div>
+        <div class="trait-body">
+          <div class="trait-header">
+            <div class="trait-title-row">
+              <span class="trait-emoji">🌌</span>
+              <div>
+                <div class="trait-name">Openness</div>
+                <div class="trait-full-name">Openness to Experience</div>
+              </div>
+            </div>
+            <span class="trait-range-badge" style="background:#eef2ff;color:#6366f1;">O in OCEAN</span>
+          </div>
+          <p class="trait-desc">
+            Openness measures your curiosity, creativity, and willingness to explore new ideas, experiences, and perspectives. It's the trait of the artist, the philosopher, the innovator — people who love learning for its own sake and are drawn to novelty.
+          </p>
+          <div class="trait-spectrum">
+            <div class="spectrum-side">
+              <div class="spectrum-label high">✦ High Openness</div>
+              <ul class="spectrum-traits">
+                <li>Imaginative &amp; creative</li>
+                <li>Loves learning new things</li>
+                <li>Comfortable with ambiguity</li>
+                <li>Open to abstract ideas</li>
+                <li>Appreciates art &amp; beauty</li>
+              </ul>
+            </div>
+            <div class="spectrum-side">
+              <div class="spectrum-label low">↓ Low Openness</div>
+              <ul class="spectrum-traits">
+                <li>Prefers routine &amp; familiarity</li>
+                <li>Practical over theoretical</li>
+                <li>Conventional &amp; traditional</li>
+                <li>Focused and detail-oriented</li>
+                <li>Prefers clear-cut answers</li>
+              </ul>
+            </div>
+          </div>
+          <div class="trait-improve">
+            <div class="trait-improve-title">How Psyche helps you grow Openness</div>
+            <ul class="trait-improve-list">
+              <li>Daily micro-challenges to try something new</li>
+              <li>Journaling prompts for creative reflection</li>
+              <li>Curated reading &amp; learning habits</li>
+              <li>Exposure exercises to expand your comfort zone</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <!-- Conscientiousness -->
+      <div class="trait-card">
+        <div class="trait-stripe" style="background:#16a34a;"></div>
+        <div class="trait-body">
+          <div class="trait-header">
+            <div class="trait-title-row">
+              <span class="trait-emoji">📋</span>
+              <div>
+                <div class="trait-name">Conscientiousness</div>
+                <div class="trait-full-name">Self-Discipline &amp; Goal-Orientation</div>
+              </div>
+            </div>
+            <span class="trait-range-badge" style="background:#f0fdf4;color:#16a34a;">C in OCEAN</span>
+          </div>
+          <p class="trait-desc">
+            Conscientiousness is your capacity for organization, discipline, and follow-through. Highly conscientious people set goals and actually reach them. They're reliable, thorough, and strategic. This trait is one of the strongest predictors of success in academics, career, and health.
+          </p>
+          <div class="trait-spectrum">
+            <div class="spectrum-side">
+              <div class="spectrum-label high">✦ High Conscientiousness</div>
+              <ul class="spectrum-traits">
+                <li>Organized &amp; plans ahead</li>
+                <li>Reliable and punctual</li>
+                <li>Strong work ethic</li>
+                <li>Goal-directed behavior</li>
+                <li>High self-discipline</li>
+              </ul>
+            </div>
+            <div class="spectrum-side">
+              <div class="spectrum-label low">↓ Low Conscientiousness</div>
+              <ul class="spectrum-traits">
+                <li>Flexible &amp; spontaneous</li>
+                <li>May procrastinate</li>
+                <li>Struggles with routine</li>
+                <li>Easy-going attitude</li>
+                <li>Dislikes rigid structure</li>
+              </ul>
+            </div>
+          </div>
+          <div class="trait-improve">
+            <div class="trait-improve-title">How Psyche helps you grow Conscientiousness</div>
+            <ul class="trait-improve-list">
+              <li>Daily habit checklists with streak tracking</li>
+              <li>Time-blocking and planning exercises</li>
+              <li>Small commitment → big consistency challenges</li>
+              <li>Progress visualization to reinforce follow-through</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <!-- Extraversion -->
+      <div class="trait-card">
+        <div class="trait-stripe" style="background:#f59e0b;"></div>
+        <div class="trait-body">
+          <div class="trait-header">
+            <div class="trait-title-row">
+              <span class="trait-emoji">⚡</span>
+              <div>
+                <div class="trait-name">Extraversion</div>
+                <div class="trait-full-name">Social Energy &amp; Assertiveness</div>
+              </div>
+            </div>
+            <span class="trait-range-badge" style="background:#fefce8;color:#a16207;">E in OCEAN</span>
+          </div>
+          <p class="trait-desc">
+            Extraversion measures how much you draw energy from the outside world — people, activity, and stimulation. It includes assertiveness, enthusiasm, and a tendency to seek out social situations. This isn't about being loud; it's about where your energy flows.
+          </p>
+          <div class="trait-spectrum">
+            <div class="spectrum-side">
+              <div class="spectrum-label high">✦ High Extraversion</div>
+              <ul class="spectrum-traits">
+                <li>Energized by social interaction</li>
+                <li>Assertive &amp; talkative</li>
+                <li>Enjoys being the center</li>
+                <li>Action-oriented</li>
+                <li>Draws energy from groups</li>
+              </ul>
+            </div>
+            <div class="spectrum-side">
+              <div class="spectrum-label low">↓ Low Extraversion (Introversion)</div>
+              <ul class="spectrum-traits">
+                <li>Recharges in solitude</li>
+                <li>Prefers deep conversations</li>
+                <li>Thinks before speaking</li>
+                <li>Selective socializing</li>
+                <li>Comfortable being alone</li>
+              </ul>
+            </div>
+          </div>
+          <div class="trait-improve">
+            <div class="trait-improve-title">How Psyche helps you develop Extraversion</div>
+            <ul class="trait-improve-list">
+              <li>Social initiation challenges (one conversation/day)</li>
+              <li>Assertiveness-building micro-tasks</li>
+              <li>Public speaking &amp; expression exercises</li>
+              <li>Networking and connection-making habits</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <!-- Agreeableness -->
+      <div class="trait-card">
+        <div class="trait-stripe" style="background:#06b6d4;"></div>
+        <div class="trait-body">
+          <div class="trait-header">
+            <div class="trait-title-row">
+              <span class="trait-emoji">🫶</span>
+              <div>
+                <div class="trait-name">Agreeableness</div>
+                <div class="trait-full-name">Empathy, Cooperation &amp; Trust</div>
+              </div>
+            </div>
+            <span class="trait-range-badge" style="background:#ecfeff;color:#0e7490;">A in OCEAN</span>
+          </div>
+          <p class="trait-desc">
+            Agreeableness reflects your orientation toward others — your empathy, compassion, and willingness to cooperate. Highly agreeable people prioritize harmony and are attuned to others' emotions. It's strongly linked to relationship satisfaction and prosocial behavior.
+          </p>
+          <div class="trait-spectrum">
+            <div class="spectrum-side">
+              <div class="spectrum-label high">✦ High Agreeableness</div>
+              <ul class="spectrum-traits">
+                <li>Warm &amp; compassionate</li>
+                <li>Cooperative &amp; helpful</li>
+                <li>Trusting of others</li>
+                <li>Conflict-avoidant</li>
+                <li>Empathetic listener</li>
+              </ul>
+            </div>
+            <div class="spectrum-side">
+              <div class="spectrum-label low">↓ Low Agreeableness</div>
+              <ul class="spectrum-traits">
+                <li>Competitive &amp; skeptical</li>
+                <li>Direct, even blunt</li>
+                <li>Prioritizes self-interest</li>
+                <li>Challenges others openly</li>
+                <li>Harder to build rapport</li>
+              </ul>
+            </div>
+          </div>
+          <div class="trait-improve">
+            <div class="trait-improve-title">How Psyche helps you grow Agreeableness</div>
+            <ul class="trait-improve-list">
+              <li>Daily gratitude and kindness practices</li>
+              <li>Active listening exercises</li>
+              <li>Perspective-taking reflection prompts</li>
+              <li>Conflict-resolution skill-building habits</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <!-- Neuroticism -->
+      <div class="trait-card">
+        <div class="trait-stripe" style="background:#dc2626;"></div>
+        <div class="trait-body">
+          <div class="trait-header">
+            <div class="trait-title-row">
+              <span class="trait-emoji">🌊</span>
+              <div>
+                <div class="trait-name">Neuroticism</div>
+                <div class="trait-full-name">Emotional Reactivity &amp; Stability</div>
+              </div>
+            </div>
+            <span class="trait-range-badge" style="background:#fef2f2;color:#dc2626;">N in OCEAN</span>
+          </div>
+          <p class="trait-desc">
+            Neuroticism measures your tendency toward negative emotional states — anxiety, moodiness, irritability, and emotional reactivity. Unlike the other four traits where higher is generally better, <strong>lower Neuroticism = better outcomes</strong>. It's the one trait Psyche helps you actively reduce.
+          </p>
+          <div class="trait-spectrum">
+            <div class="spectrum-side">
+              <div class="spectrum-label low-neu">✦ Low Neuroticism (Goal)</div>
+              <ul class="spectrum-traits">
+                <li>Emotionally stable</li>
+                <li>Calm under pressure</li>
+                <li>Resilient to setbacks</li>
+                <li>Consistent mood</li>
+                <li>Less stress and anxiety</li>
+              </ul>
+            </div>
+            <div class="spectrum-side">
+              <div class="spectrum-label high-neu">↑ High Neuroticism</div>
+              <ul class="spectrum-traits">
+                <li>Prone to anxiety &amp; worry</li>
+                <li>Mood swings</li>
+                <li>Sensitive to criticism</li>
+                <li>Overthinks situations</li>
+                <li>Emotional exhaustion</li>
+              </ul>
+            </div>
+          </div>
+          <div class="trait-improve">
+            <div class="trait-improve-title">How Psyche helps you reduce Neuroticism</div>
+            <ul class="trait-improve-list">
+              <li>Mindfulness &amp; breathwork daily habits</li>
+              <li>Cognitive reframing exercises</li>
+              <li>Stress-release physical activity tasks</li>
+              <li>Sleep hygiene and recovery routines</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="page-divider"></div>
+
+  <!-- ═══════════════ BENEFITS ═══════════════ -->
+  <div id="benefits">
+    <div class="section-label">🚀 Part 4</div>
+    <h2 class="big-heading">What You Get with Psyche</h2>
+    <p class="big-sub">Psyche is not just another personality quiz. It's a science-backed growth system that translates your personality profile into a daily action plan — personalized entirely around <em>you</em>.</p>
+
+    <div class="benefits-grid">
+      <div class="benefit-card">
+        <span class="benefit-icon">🎯</span>
+        <h3>Personalized Habit Plans</h3>
+        <p>After your quiz, Psyche identifies your weakest traits and generates custom daily tasks designed to strengthen exactly those areas. No generic advice.</p>
+      </div>
+      <div class="benefit-card">
+        <span class="benefit-icon">🔥</span>
+        <h3>Streak Tracking</h3>
+        <p>Build momentum with daily streak tracking. Consistent action compounds over time — Psyche keeps you accountable day after day with visual progress and milestones.</p>
+      </div>
+      <div class="benefit-card">
+        <span class="benefit-icon">📊</span>
+        <h3>Trait Score Progress</h3>
+        <p>Your Big Five scores are tracked across multiple quiz attempts. Watch your traits improve over weeks and months as your daily habits take effect.</p>
+      </div>
+      <div class="benefit-card">
+        <span class="benefit-icon">🧪</span>
+        <h3>Science-Based Approach</h3>
+        <p>The Big Five model is the gold standard in personality psychology. Your habits are grounded in behavioral science — not horoscopes or pop psychology.</p>
+      </div>
+      <div class="benefit-card">
+        <span class="benefit-icon">📈</span>
+        <h3>Quiz History &amp; Comparison</h3>
+        <p>Retake the quiz anytime. Your Profile page shows a detailed comparison table of all your attempts, so you can see exactly how you've grown over time.</p>
+      </div>
+      <div class="benefit-card">
+        <span class="benefit-icon">⚡</span>
+        <h3>Daily Micro-Actions</h3>
+        <p>Psyche breaks growth into tiny, doable steps. Each task takes under 10 minutes. Small daily actions add up to massive personality-level change.</p>
+      </div>
+      <div class="benefit-card">
+        <span class="benefit-icon">🏆</span>
+        <h3>Milestone Rewards</h3>
+        <p>Hit milestones — 7, 14, 30, 60, 100 days — and earn achievement badges. Celebrate every step forward on your growth journey.</p>
+      </div>
+      <div class="benefit-card">
+        <span class="benefit-icon">🔄</span>
+        <h3>Adaptive System</h3>
+        <p>As your scores change, your habit plan updates. Psyche always focuses on your current growth edges — never repeating what you've already mastered.</p>
+      </div>
+      <div class="benefit-card">
+        <span class="benefit-icon">🧘</span>
+        <h3>Whole-Person Focus</h3>
+        <p>Psyche works across all five dimensions simultaneously — not just your biggest weakness. Your growth plan covers mind, emotion, discipline, and social skills.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- CTA -->
+  <div class="cta-box">
+    <h2>Ready to Discover Your Personality?</h2>
+    <p>Take the Psyche quiz — it only takes 5 minutes — and unlock your personalized growth plan based on your unique Big Five profile.</p>
+    <a href="/quiz" class="btn-white">Take the Quiz Now →</a>
+  </div>
+
+</main>
+
+<footer class="app-footer">
+  &copy; 2025 Psyche — Personality-driven self-improvement
+</footer>
+
+</body>
+</html>

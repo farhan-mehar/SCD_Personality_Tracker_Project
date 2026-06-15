@@ -1,0 +1,58 @@
+version: "3.8"
+
+services:
+
+  # ── MySQL 8.0 Database ──────────────────────────────────────────
+  mysql:
+    image: mysql:8.0
+    container_name: psyche-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-rootpass}
+      MYSQL_DATABASE: psyche_db
+    ports:
+      - "3307:3306"     # host:3307 avoids conflict with local MySQL on 3306
+    volumes:
+      - psyche-mysql-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-p${MYSQL_ROOT_PASSWORD:-rootpass}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    networks:
+      - psyche-network
+
+  # ── Spring Boot Application ─────────────────────────────────────
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: psyche-app:latest
+    container_name: psyche-app
+    restart: unless-stopped
+    depends_on:
+      mysql:
+        condition: service_healthy
+    environment:
+      # Database — points to mysql service inside Docker network
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/psyche_db?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: ${MYSQL_ROOT_PASSWORD:-rootpass}
+      # Email — set your real Gmail App Password in .env file
+      SPRING_MAIL_USERNAME: ${SPRING_MAIL_USERNAME:-your_email@gmail.com}
+      SPRING_MAIL_PASSWORD: ${SPRING_MAIL_PASSWORD:-your_app_password}
+      # JPA
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+      SPRING_JPA_SHOW_SQL: "false"
+    ports:
+      - "8080:8080"
+    networks:
+      - psyche-network
+
+networks:
+  psyche-network:
+    driver: bridge
+
+volumes:
+  psyche-mysql-data:

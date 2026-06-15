@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Dashboard — Psyche</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,700;1,400&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" th:href="@{/css/style.css}"/>
+  <!-- CSRF meta tags for AJAX -->
+  <meta name="_csrf"        th:content="${_csrf.token}"/>
+  <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
+  <style>
+    /* Celebration */
+    .celebration{display:none;position:fixed;inset:0;z-index:9999;pointer-events:none}
+    .celebration.show{display:block}
+    .cel-modal{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#fff;border-radius:24px;padding:2.5rem 3rem;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.2);z-index:10000;pointer-events:all;animation:popIn .5s cubic-bezier(.175,.885,.32,1.275)}
+    @keyframes popIn{from{opacity:0;transform:translate(-50%,-50%) scale(.5)}to{opacity:1;transform:translate(-50%,-50%) scale(1)}}
+    .cel-emoji{font-size:4rem;margin-bottom:.5rem;display:block}
+    .cel-title{font-family:'Playfair Display',serif;font-size:1.8rem;color:#1e293b;margin-bottom:.5rem}
+    .cel-sub{color:#64748b;font-size:.95rem;margin-bottom:1.5rem;line-height:1.6}
+    .cel-close{background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;border:none;border-radius:100px;padding:.7rem 2rem;font-size:.9rem;font-weight:600;cursor:pointer;pointer-events:all}
+    .confetti-piece{position:fixed;border-radius:2px;animation:fall linear forwards;pointer-events:none}
+    @keyframes fall{0%{transform:translateY(-30px) rotate(0deg);opacity:1}100%{transform:translateY(110vh) rotate(720deg);opacity:0}}
+    /* Streak banner */
+    .streak-banner{background:linear-gradient(135deg,#6366f1,#8b5cf6);border-radius:14px;padding:1.25rem 1.75rem;margin-bottom:1.25rem;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem}
+    .sb-left{display:flex;align-items:center;gap:1rem}
+    .sb-emoji{font-size:2.5rem;line-height:1}
+    .sb-info{}
+    .sb-title{font-family:'Playfair Display',serif;font-size:1.3rem;color:#fff;line-height:1;margin-bottom:.2rem}
+    .sb-msg{font-size:.83rem;color:rgba(255,255,255,.8)}
+    .sb-right{text-align:center}
+    .sb-num{font-family:'Playfair Display',serif;font-size:2.8rem;color:#fff;line-height:1;font-weight:700}
+    .sb-lbl{font-size:.75rem;color:rgba(255,255,255,.75);text-transform:uppercase;letter-spacing:.08em}
+    /* Milestones */
+    .milestone-row{display:flex;gap:.5rem;flex-wrap:wrap;margin-bottom:1.5rem}
+    .ml{font-size:.75rem;padding:.3rem .85rem;border-radius:100px;border:1.5px solid;transition:all .2s}
+    .ml.done{background:#fef9c3;border-color:#fde047;color:#854d0e;font-weight:600}
+    .ml.next{background:#f8fafc;border-color:#cbd5e1;color:#94a3b8}
+    .speed-timer-box{background:linear-gradient(135deg,#1e293b,#0f172a);border-radius:16px;padding:1.1rem 1.5rem;margin-bottom:1.25rem;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.75rem;border:1.5px solid #334155}
+    .st-left{display:flex;align-items:center;gap:.75rem}
+    .st-icon{font-size:1.6rem}
+    .st-title{color:#f1f5f9;font-size:.88rem;font-weight:700}
+    .st-sub{color:#94a3b8;font-size:.76rem;margin-top:.1rem}
+    .st-clock{font-family:'Playfair Display',serif;font-size:1.9rem;font-weight:700;color:#fbbf24;letter-spacing:.05em;white-space:nowrap}
+    .st-badge{font-size:.68rem;background:#fef3c7;color:#92400e;padding:.2rem .65rem;border-radius:100px;font-weight:700;margin-top:.25rem;display:inline-block}
+    .reward-popup{position:fixed;top:1.25rem;right:1.25rem;z-index:10001;display:flex;flex-direction:column;gap:.6rem;pointer-events:none}
+    .rp-card{background:#fff;border-radius:14px;padding:1rem 1.25rem;box-shadow:0 8px 32px rgba(0,0,0,.18);border-left:5px solid #6366f1;display:flex;align-items:center;gap:.85rem;min-width:280px;max-width:340px;pointer-events:all;animation:slideInRight .4s cubic-bezier(.175,.885,.32,1.275)}
+    @keyframes slideInRight{from{opacity:0;transform:translateX(120px)}to{opacity:1;transform:translateX(0)}}
+    .rp-emoji{font-size:2rem;flex-shrink:0}
+    .rp-tag{font-size:.65rem;font-weight:700;text-transform:uppercase;letter-spacing:.09em;color:#6366f1;margin-bottom:.1rem}
+    .rp-title{font-size:.92rem;font-weight:700;color:#1e293b}
+    .rp-desc{font-size:.78rem;color:#64748b;margin-top:.15rem;line-height:1.4}
+  </style>
+</head>
+<body class="app-body">
+
+<!-- Reward popup container -->
+<div class="reward-popup" id="reward-popup"></div>
+
+<!-- Celebration overlay — always in DOM, shown via JS -->
+<div class="celebration" id="celebration">
+  <div class="cel-modal">
+    <span class="cel-emoji">🎊</span>
+    <div class="cel-title">Amazing Work! 🎉</div>
+    <p class="cel-sub">You completed <strong>ALL</strong> your tasks today!<br/>
+    Come back tomorrow to keep your streak alive!</p>
+    <button class="cel-close" onclick="closeCelebration()">Keep Going! 💪</button>
+  </div>
+</div>
+
+<nav class="navbar">
+  <a href="/dashboard" class="nav-brand">✦ Psyche</a>
+  <div class="nav-links">
+    <a href="/dashboard" class="nav-link active">Dashboard</a>
+    <a href="/quiz"      class="nav-link">Quiz</a>
+    <a href="/learn"     class="nav-link">Learn</a>
+    <a href="/profile"   class="nav-link">Profile</a>
+    <form action="/logout" method="post" style="display:inline">
+      <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+      <button type="submit" class="nav-link nav-logout"
+              style="background:none;border:none;cursor:pointer;font-family:inherit;font-size:.9rem;padding:.4rem .75rem;border-radius:6px">
+        Logout
+      </button>
+    </form>
+  </div>
+</nav>
+
+<main class="app-main">
+
+  <!-- Welcome header -->
+  <div class="dash-header">
+    <div>
+      <h1 class="dash-title">Good day, <span th:text="${user.fullName}">User</span>! 👋</h1>
+      <p class="dash-sub" th:if="${!quizDone}">Take the quiz to discover your personality and unlock your daily improvement plan.</p>
+      <p class="dash-sub" th:if="${quizDone}">Here's your progress today. Keep building those habits!</p>
+    </div>
+    <a href="/quiz" class="btn-primary"
+       th:text="${quizDone} ? 'Retake Quiz' : 'Take Quiz Now →'">Quiz</a>
+  </div>
+
+  <!-- Global Streak Banner -->
+  <div class="streak-banner" th:if="${quizDone}">
+    <div class="sb-left">
+      <span class="sb-emoji" id="sb-emoji" th:text="${globalStreakEmoji}">🔥</span>
+      <div class="sb-info">
+        <div class="sb-title">Your Daily Streak</div>
+        <div class="sb-msg" id="sb-msg" th:text="${globalStreakMsg}">Keep going!</div>
+      </div>
+    </div>
+    <div class="sb-right">
+      <div class="sb-num" id="sb-num" th:text="${globalStreak}">0</div>
+      <div class="sb-lbl">Consecutive Days</div>
+    </div>
+  </div>
+
+  <!-- Milestone badges -->
+  <div class="milestone-row" th:if="${quizDone}">
+    <span th:class="${globalStreak>=1}?'ml done':'ml next'">🌱 Day 1</span>
+    <span th:class="${globalStreak>=3}?'ml done':'ml next'">🔥 3 Days</span>
+    <span th:class="${globalStreak>=7}?'ml done':'ml next'">⚡ 1 Week</span>
+    <span th:class="${globalStreak>=14}?'ml done':'ml next'">🌟 2 Weeks</span>
+    <span th:class="${globalStreak>=21}?'ml done':'ml next'">💎 21 Days</span>
+    <span th:class="${globalStreak>=30}?'ml done':'ml next'">🏆 30 Days</span>
+  </div>
+
+  <!-- Speed Reward Timer -->
+  <div class="speed-timer-box" id="speed-timer-box"
+       th:if="${quizDone and showSpeedTimer}"
+       th:attr="data-secs=${timerSecsRemaining}">
+    <div class="st-left">
+      <span class="st-icon">⚡</span>
+      <div>
+        <div class="st-title">Speed Reward Window</div>
+        <div class="st-sub">Complete all tasks in time to earn a bonus reward!</div>
+        <span class="st-badge">🏅 Speed Demon · Quick Achiever · Same-Hour Hero</span>
+      </div>
+    </div>
+    <div>
+      <div class="st-clock" id="speed-clock">--:--</div>
+      <div style="color:#94a3b8;font-size:.7rem;text-align:center;margin-top:.2rem">remaining</div>
+    </div>
+  </div>
+
+  <!-- Stats Row -->
+  <div class="stats-row" th:if="${quizDone}">
+    <div class="stat-box">
+      <div class="stat-icon" style="background:#eef2ff;color:#6366f1">📋</div>
+      <div>
+        <div class="stat-val" id="stat-today"
+             th:text="${totalDoneToday}+'/'+${totalTasksToday}">0/0</div>
+        <div class="stat-lbl">Tasks Today</div>
+      </div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-icon" style="background:#fef3c7;color:#d97706"
+           id="stat-streak-icon" th:text="${globalStreakEmoji}">🔥</div>
+      <div>
+        <div class="stat-val" id="stat-streak"
+             th:text="${globalStreak}+' days'">0</div>
+        <div class="stat-lbl">Current Streak</div>
+      </div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-icon" style="background:#f0fdf4;color:#16a34a">🧬</div>
+      <div>
+        <div class="stat-val"
+             th:text="${user.mbtiType!=null and !user.mbtiType.isEmpty()}?${user.mbtiType}:'—'">—</div>
+        <div class="stat-lbl">MBTI Type</div>
+      </div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-icon" style="background:#fdf4ff;color:#9333ea">✅</div>
+      <div>
+        <div class="stat-val" id="stat-total" th:text="${allTimeCompleted}">0</div>
+        <div class="stat-lbl">Total Completed</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Big Five Scores -->
+  <div class="section-card" th:if="${quizDone}">
+    <h2 class="section-title">Your Big Five Scores</h2>
+    <div class="scores-grid">
+      <div class="score-row">
+        <span class="score-label">Openness</span>
+        <div class="score-bar-wrap"><div class="score-bar" th:style="'width:'+${user.openness}+'%;background:#f97316'"></div></div>
+        <span class="score-num" th:text="${user.openness}">0</span>
+        <span th:class="${user.openness>=70}?'score-tag good':(${user.openness}>=40?'score-tag mid':'score-tag low')"
+              th:text="${user.openness>=70}?'Strong':(${user.openness}>=40?'Moderate':'Needs Work')">level</span>
+      </div>
+      <div class="score-row">
+        <span class="score-label">Conscientiousness</span>
+        <div class="score-bar-wrap"><div class="score-bar" th:style="'width:'+${user.conscientiousness}+'%;background:#3b82f6'"></div></div>
+        <span class="score-num" th:text="${user.conscientiousness}">0</span>
+        <span th:class="${user.conscientiousness>=70}?'score-tag good':(${user.conscientiousness}>=40?'score-tag mid':'score-tag low')"
+              th:text="${user.conscientiousness>=70}?'Strong':(${user.conscientiousness}>=40?'Moderate':'Needs Work')">level</span>
+      </div>
+      <div class="score-row">
+        <span class="score-label">Extraversion</span>
+        <div class="score-bar-wrap"><div class="score-bar" th:style="'width:'+${user.extraversion}+'%;background:#eab308'"></div></div>
+        <span class="score-num" th:text="${user.extraversion}">0</span>
+        <span th:class="${user.extraversion>=70}?'score-tag good':(${user.extraversion}>=40?'score-tag mid':'score-tag low')"
+              th:text="${user.extraversion>=70}?'Strong':(${user.extraversion}>=40?'Moderate':'Needs Work')">level</span>
+      </div>
+      <div class="score-row">
+        <span class="score-label">Agreeableness</span>
+        <div class="score-bar-wrap"><div class="score-bar" th:style="'width:'+${user.agreeableness}+'%;background:#22c55e'"></div></div>
+        <span class="score-num" th:text="${user.agreeableness}">0</span>
+        <span th:class="${user.agreeableness>=70}?'score-tag good':(${user.agreeableness}>=40?'score-tag mid':'score-tag low')"
+              th:text="${user.agreeableness>=70}?'Strong':(${user.agreeableness}>=40?'Moderate':'Needs Work')">level</span>
+      </div>
+      <div class="score-row">
+        <span class="score-label">Neuroticism</span>
+        <div class="score-bar-wrap"><div class="score-bar" th:style="'width:'+${user.neuroticism}+'%;background:#a855f7'"></div></div>
+        <span class="score-num" th:text="${user.neuroticism}">0</span>
+        <span th:class="${user.neuroticism<=40}?'score-tag good':(${user.neuroticism}<=60?'score-tag mid':'score-tag low')"
+              th:text="${user.neuroticism<=40}?'Stable':(${user.neuroticism}<=60?'Moderate':'Needs Work')">level</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Daily Tasks -->
+  <div th:if="${quizDone and !traitCards.isEmpty()}">
+    <h2 class="section-heading">Today's Improvement Tasks</h2>
+    <!-- Store total tasks count for JS -->
+    <div id="total-tasks-count"
+         th:attr="data-total=${totalTasksToday},data-done=${totalDoneToday}"
+         style="display:none"></div>
+
+    <div class="trait-cards">
+      <div class="trait-card" th:each="card : ${traitCards}">
+        <div class="tc-header" th:style="'border-left:4px solid '+${card.color}">
+          <div class="tc-title-row">
+            <div class="tc-dot" th:style="'background:'+${card.color}"></div>
+            <h3 class="tc-title" th:text="${card.trait}">Trait</h3>
+          </div>
+          <div class="tc-progress-wrap">
+            <div class="tc-progress-bar">
+              <div class="tc-progress-fill"
+                   th:style="'width:'+${card.todayPct}+'%;background:'+${card.color}"></div>
+            </div>
+            <span class="tc-pct" th:text="${card.todayPct}+'%'">0%</span>
+          </div>
+        </div>
+        <div class="tc-tasks">
+          <div class="tc-task"
+               th:each="task : ${card.tasks}"
+               th:classappend="${task.completed}?' done':''"
+               th:id="'task-row-'+${task.id}">
+            <!-- AJAX toggle button -->
+            <button class="check-btn"
+                    th:classappend="${task.completed}?' checked':''"
+                    th:attr="data-id=${task.id}"
+                    onclick="toggleTask(this)">
+              <span th:if="${task.completed}">✓</span>
+            </button>
+            <span class="task-text" th:text="${task.taskText}">Task</span>
+          </div>
+        </div>
+        <div class="all-done" th:if="${card.todayPct==100}"
+             th:id="'all-done-'+${card.trait.toLowerCase()}">
+          🎉 All done for this trait today!
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- All traits balanced -->
+  <div class="balanced-box" th:if="${quizDone and traitCards.isEmpty()}">
+    <div style="font-size:3rem;margin-bottom:.75rem">🏆</div>
+    <h2>All Traits Are Balanced!</h2>
+    <p>Your personality is well-rounded. Retake the quiz anytime to track your growth.</p>
+    <a href="/quiz" class="btn-primary"
+       style="margin-top:1rem;display:inline-block">Retake Quiz</a>
+  </div>
+
+  <!-- Quiz prompt -->
+  <div class="quiz-prompt" th:if="${!quizDone}">
+    <div class="qp-icon">🧠</div>
+    <h2>Discover Your Personality</h2>
+    <p>Take the 20-question quiz to get your Big Five scores and a personalized daily improvement plan.</p>
+    <a href="/quiz" class="btn-primary"
+       style="margin-top:1.25rem;display:inline-block">Start Quiz →</a>
+  </div>
+
+</main>
+<footer class="app-footer">✦ Psyche Personality Tracker · Spring Boot + MySQL</footer>
+
+<script>
+// ── CSRF from meta tag ─────────────────────────────────────────────
+function getCsrf() {
+  return {
+    token:  document.querySelector('meta[name="_csrf"]')?.content || '',
+    header: document.querySelector('meta[name="_csrf_header"]')?.content || 'X-CSRF-TOKEN'
+  };
+}
+
+// ── Global counters ────────────────────────────────────────────────
+var allTasksDone = false;
+var celebrated   = false;
+
+function getTotalInfo() {
+  var el = document.getElementById('total-tasks-count');
+  if (!el) return {total:0, done:0};
+  return {
+    total: parseInt(el.getAttribute('data-total')) || 0,
+    done:  parseInt(el.getAttribute('data-done'))  || 0
+  };
+}
+
+// ── AJAX Task Toggle ───────────────────────────────────────────────
+function toggleTask(btn) {
+  var taskId = btn.getAttribute('data-id');
+  var row    = document.getElementById('task-row-' + taskId);
+  var csrf   = getCsrf();
+  var headers = {'Content-Type':'application/json'};
+  headers[csrf.header] = csrf.token;
+
+  fetch('/tasks/' + taskId + '/toggle', { method:'POST', headers: headers })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      // Toggle button visual
+      var wasDone = btn.classList.contains('checked');
+      if (wasDone) {
+        btn.classList.remove('checked');
+        btn.innerHTML = '';
+        row.classList.remove('done');
+      } else {
+        btn.classList.add('checked');
+        btn.innerHTML = '<span>✓</span>';
+        row.classList.add('done');
+      }
+
+      // Update today stats display
+      var statEl = document.getElementById('stat-today');
+      if (statEl) statEl.textContent = data.totalDoneToday + '/' + data.totalTasksToday;
+
+      var streakEl = document.getElementById('stat-streak');
+      if (streakEl) streakEl.textContent = data.globalStreak + ' days';
+
+      var sbNum = document.getElementById('sb-num');
+      if (sbNum) sbNum.textContent = data.globalStreak;
+
+      var sbEmoji = document.getElementById('sb-emoji');
+      if (sbEmoji) sbEmoji.textContent = data.streakEmoji;
+
+      var totalEl = document.getElementById('stat-total');
+      if (totalEl) totalEl.textContent = parseInt(totalEl.textContent || '0') + (wasDone ? -1 : 1);
+
+      // Recalculate trait progress bars
+      recalcTraitProgress();
+
+      // Show reward popups if any new rewards earned
+      if (data.newRewards && data.newRewards.length > 0) {
+        showRewardPopups(data.newRewards);
+        // Hide speed timer since tasks done
+        var stBox = document.getElementById('speed-timer-box');
+        if (stBox) stBox.style.display = 'none';
+        if (speedInterval) clearInterval(speedInterval);
+      }
+      // Show celebration if all tasks done
+      if (data.allDoneToday && !celebrated) {
+        celebrated = true;
+        setTimeout(showCelebration, 400);
+      }
+    })
+    .catch(function(err) {
+      console.error('Toggle failed:', err);
+      // Fallback: reload page if AJAX fails
+      window.location.reload();
+    });
+}
+
+// ── Recalculate per-trait progress bar ────────────────────────────
+function recalcTraitProgress() {
+  document.querySelectorAll('.trait-card').forEach(function(card) {
+    var checks   = card.querySelectorAll('.check-btn');
+    var done     = card.querySelectorAll('.check-btn.checked').length;
+    var total    = checks.length;
+    var pct      = total === 0 ? 0 : Math.round(done * 100 / total);
+    var fill     = card.querySelector('.tc-progress-fill');
+    var pctEl    = card.querySelector('.tc-pct');
+    var allDoneEl= card.querySelector('.all-done');
+    if (fill)  fill.style.width = pct + '%';
+    if (pctEl) pctEl.textContent = pct + '%';
+    if (allDoneEl) {
+      allDoneEl.style.display = pct === 100 ? 'block' : 'none';
+    } else if (pct === 100) {
+      // Create all-done banner dynamically
+      var banner = document.createElement('div');
+      banner.className = 'all-done';
+      banner.textContent = '🎉 All done for this trait today!';
+      card.appendChild(banner);
+    }
+  });
+}
+
+// ── Celebration ────────────────────────────────────────────────────
+function showCelebration() {
+  var cel = document.getElementById('celebration');
+  if (!cel) return;
+  cel.style.display = 'block';
+  launchConfetti();
+  setTimeout(closeCelebration, 8000);
+}
+
+function closeCelebration() {
+  var cel = document.getElementById('celebration');
+  if (cel) cel.style.display = 'none';
+}
+
+function launchConfetti() {
+  var colors = ['#6366f1','#8b5cf6','#f97316','#22c55e','#eab308','#ec4899','#f43f5e','#06b6d4'];
+  for (var i = 0; i < 120; i++) {
+    (function() {
+      var el = document.createElement('div');
+      el.className = 'confetti-piece';
+      var size = Math.random() * 10 + 5;
+      el.style.cssText = [
+        'left:'    + (Math.random() * 100) + 'vw',
+        'top:-30px',
+        'width:'   + size + 'px',
+        'height:'  + size + 'px',
+        'background:' + colors[Math.floor(Math.random() * colors.length)],
+        'animation-duration:' + (Math.random() * 2 + 1.5) + 's',
+        'animation-delay:'    + (Math.random() * 2) + 's'
+      ].join(';');
+      document.getElementById('celebration').appendChild(el);
+    })();
+  }
+}
+
+// ── On page load: show celebration if server says all done ────────
+window.addEventListener('load', function() {
+  var infoEl = document.getElementById('total-tasks-count');
+  if (infoEl) {
+    var total = parseInt(infoEl.getAttribute('data-total')) || 0;
+    var done  = parseInt(infoEl.getAttribute('data-done'))  || 0;
+    if (total > 0 && total === done && !celebrated) {
+      celebrated = true;
+      setTimeout(showCelebration, 600);
+    }
+  }
+  // Start speed timer if present
+  startSpeedTimer();
+});
+
+// ── Speed Countdown Timer ─────────────────────────────────────────
+var speedInterval = null;
+function startSpeedTimer() {
+  var box = document.getElementById('speed-timer-box');
+  var clockEl = document.getElementById('speed-clock');
+  if (!box || !clockEl) return;
+  var secsLeft = parseInt(box.getAttribute('data-secs')) || 0;
+  if (secsLeft <= 0) { box.style.display = 'none'; return; }
+
+  function tick() {
+    if (secsLeft <= 0) {
+      clearInterval(speedInterval);
+      box.style.opacity = '0.4';
+      clockEl.textContent = 'Expired';
+      clockEl.style.color = '#ef4444';
+      return;
+    }
+    var m = Math.floor(secsLeft / 60);
+    var s = secsLeft % 60;
+    clockEl.textContent = String(m).padStart(2,'0') + ':' + String(s).padStart(2,'0');
+    // Turn red in last 2 minutes
+    if (secsLeft <= 120) {
+      clockEl.style.color = '#ef4444';
+      box.style.borderColor = '#ef4444';
+    }
+    secsLeft--;
+  }
+  tick();
+  speedInterval = setInterval(tick, 1000);
+}
+
+// ── Reward Popup ──────────────────────────────────────────────────
+function showRewardPopups(rewards) {
+  var container = document.getElementById('reward-popup');
+  if (!container || !rewards || rewards.length === 0) return;
+
+  rewards.forEach(function(r, i) {
+    setTimeout(function() {
+      var card = document.createElement('div');
+      card.className = 'rp-card';
+      card.style.borderLeftColor = r.color || '#6366f1';
+      card.innerHTML =
+        '<div class="rp-emoji">' + (r.emoji || '🏆') + '</div>' +
+        '<div>' +
+          '<div class="rp-tag">🎉 New Reward Unlocked!</div>' +
+          '<div class="rp-title">' + r.title + '</div>' +
+          '<div class="rp-desc">' + r.description + '</div>' +
+        '</div>';
+      container.appendChild(card);
+      // Auto-remove after 6 seconds
+      setTimeout(function() {
+        card.style.opacity = '0';
+        card.style.transform = 'translateX(120px)';
+        card.style.transition = 'opacity .4s, transform .4s';
+        setTimeout(function() { card.remove(); }, 450);
+      }, 6000);
+    }, i * 700);
+  });
+}
+</script>
+</body>
+</html>

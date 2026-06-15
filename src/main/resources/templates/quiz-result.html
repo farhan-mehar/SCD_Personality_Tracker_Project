@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Your Results — Psyche</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,700;1,400&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" th:href="@{/css/style.css}"/>
+  <style>
+    .ta-card{background:#fff;border:1px solid var(--border);border-radius:14px;overflow:hidden;box-shadow:var(--shadow);margin-bottom:1rem}
+    .ta-top{padding:1.1rem 1.4rem;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.75rem}
+    .ta-left{display:flex;align-items:center;gap:.75rem}
+    .ta-dot{width:11px;height:11px;border-radius:50%;flex-shrink:0}
+    .ta-name{font-size:.95rem;font-weight:600;color:var(--text)}
+    .ta-sub{font-size:.75rem;color:var(--muted)}
+    .ta-right{display:flex;align-items:center;gap:.85rem}
+    .ta-score-big{font-family:'Playfair Display',serif;font-size:1.9rem;font-weight:700;line-height:1}
+    .ta-badge{font-size:.72rem;font-weight:600;padding:.25rem .75rem;border-radius:100px}
+    .ta-badge.good{background:#f0fdf4;color:#16a34a;border:1px solid #bbf7d0}
+    .ta-badge.mid{background:#fefce8;color:#ca8a04;border:1px solid #fde68a}
+    .ta-badge.low{background:#fef2f2;color:#dc2626;border:1px solid #fecaca}
+    .ta-bar-wrap{padding:.1rem 1.4rem .6rem;background:#fafafa}
+    .ta-bar-track{height:7px;background:#f1f5f9;border-radius:100px;overflow:hidden}
+    .ta-bar-fill{height:100%;border-radius:100px}
+    .ta-body{padding:.9rem 1.4rem 1.1rem}
+    .ta-analysis{font-size:.88rem;color:#334155;line-height:1.65;margin-bottom:.75rem}
+    .ta-tasks-title{font-size:.75rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:.55rem}
+    .ta-tasks{display:flex;flex-direction:column;gap:.4rem}
+    .ta-task{display:flex;align-items:flex-start;gap:.55rem;font-size:.84rem;color:#475569;line-height:1.5}
+    .ta-task-num{background:#f1f5f9;color:var(--muted);min-width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.68rem;font-weight:600;flex-shrink:0;margin-top:1px}
+    .ta-no-improve{background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:.65rem 1rem;font-size:.85rem;color:#166534}
+
+    /* Progress comparison */
+    .progress-card{background:#fff;border:1px solid var(--border);border-radius:14px;padding:1.5rem;margin-bottom:1.5rem;box-shadow:var(--shadow)}
+    .progress-title{font-size:1.1rem;font-weight:700;color:var(--text);margin-bottom:.3rem}
+    .progress-sub{font-size:.85rem;color:var(--muted);margin-bottom:1.25rem}
+    .compare-row{display:grid;grid-template-columns:130px 1fr;gap:.75rem;align-items:center;margin-bottom:.85rem}
+    .compare-label{font-size:.85rem;font-weight:500;color:var(--text)}
+    .compare-bars{display:flex;flex-direction:column;gap:.3rem}
+    .compare-bar-row{display:flex;align-items:center;gap:.6rem}
+    .compare-bar-label{font-size:.7rem;color:var(--muted);width:38px;text-align:right;flex-shrink:0}
+    .compare-bar-track{flex:1;height:7px;background:#f1f5f9;border-radius:100px;overflow:hidden}
+    .compare-bar-fill{height:100%;border-radius:100px}
+    .compare-bar-val{font-size:.75rem;font-weight:600;width:28px;text-align:right;flex-shrink:0}
+    .change-badge{font-size:.72rem;font-weight:600;padding:.15rem .55rem;border-radius:100px;flex-shrink:0}
+    .change-up{background:#f0fdf4;color:#16a34a}
+    .change-down{background:#fef2f2;color:#dc2626}
+    .change-same{background:#f8fafc;color:#94a3b8}
+  </style>
+</head>
+<body class="app-body">
+<nav class="navbar">
+  <a href="/dashboard" class="nav-brand">✦ Psyche</a>
+  <div class="nav-links">
+    <a href="/dashboard" class="nav-link">Dashboard</a>
+    <a href="/quiz"      class="nav-link active">Quiz</a>
+    <a href="/learn"     class="nav-link">Learn</a>
+    <a href="/profile"   class="nav-link">Profile</a>
+    <form action="/logout" method="post" style="display:inline">
+      <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+      <button type="submit" class="nav-link nav-logout" style="background:none;border:none;cursor:pointer;font-family:inherit;font-size:.9rem;padding:.4rem .75rem;border-radius:6px">Logout</button>
+    </form>
+  </div>
+</nav>
+<main class="app-main">
+
+  <!-- Hero -->
+  <div class="result-hero">
+    <div class="result-check">✓</div>
+    <h1 th:text="${isRetake} ? 'Quiz Retaken!' : 'Quiz Complete!'">Done!</h1>
+    <p>Full personality analysis for <strong th:text="${user.fullName}">User</strong>
+       <span th:if="${isRetake}"> — Attempt #<span th:text="${history.size()}">2</span></span>
+    </p>
+  </div>
+
+  <!-- ══ PROGRESS COMPARISON (only on retake) ══ -->
+  <div class="progress-card" th:if="${isRetake and prevHistory != null}">
+    <div class="progress-title">📊 Progress Since Last Quiz</div>
+    <div class="progress-sub">Comparison between your previous attempt and today's results.</div>
+
+    <!-- Openness -->
+    <div class="compare-row">
+      <span class="compare-label" style="color:#f97316">Openness</span>
+      <div class="compare-bars">
+        <div class="compare-bar-row">
+          <span class="compare-bar-label">Before</span>
+          <div class="compare-bar-track"><div class="compare-bar-fill" th:style="'width:'+${prevHistory.openness}+'%;background:#f9731680'"></div></div>
+          <span class="compare-bar-val" th:text="${prevHistory.openness}">0</span>
+        </div>
+        <div class="compare-bar-row">
+          <span class="compare-bar-label">Now</span>
+          <div class="compare-bar-track"><div class="compare-bar-fill" th:style="'width:'+${user.openness}+'%;background:#f97316'"></div></div>
+          <span class="compare-bar-val" th:text="${user.openness}">0</span>
+          <span th:if="${user.openness > prevHistory.openness}" class="change-badge change-up" th:text="'+' + (${user.openness - prevHistory.openness})">+</span>
+          <span th:if="${user.openness < prevHistory.openness}" class="change-badge change-down" th:text="${user.openness - prevHistory.openness}">-</span>
+          <span th:if="${user.openness == prevHistory.openness}" class="change-badge change-same">=</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Conscientiousness -->
+    <div class="compare-row">
+      <span class="compare-label" style="color:#3b82f6">Conscientiousness</span>
+      <div class="compare-bars">
+        <div class="compare-bar-row">
+          <span class="compare-bar-label">Before</span>
+          <div class="compare-bar-track"><div class="compare-bar-fill" th:style="'width:'+${prevHistory.conscientiousness}+'%;background:#3b82f680'"></div></div>
+          <span class="compare-bar-val" th:text="${prevHistory.conscientiousness}">0</span>
+        </div>
+        <div class="compare-bar-row">
+          <span class="compare-bar-label">Now</span>
+          <div class="compare-bar-track"><div class="compare-bar-fill" th:style="'width:'+${user.conscientiousness}+'%;background:#3b82f6'"></div></div>
+          <span class="compare-bar-val" th:text="${user.conscientiousness}">0</span>
+          <span th:if="${user.conscientiousness > prevHistory.conscientiousness}" class="change-badge change-up" th:text="'+' + (${user.conscientiousness - prevHistory.conscientiousness})">+</span>
+          <span th:if="${user.conscientiousness < prevHistory.conscientiousness}" class="change-badge change-down" th:text="${user.conscientiousness - prevHistory.conscientiousness}">-</span>
+          <span th:if="${user.conscientiousness == prevHistory.conscientiousness}" class="change-badge change-same">=</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Extraversion -->
+    <div class="compare-row">
+      <span class="compare-label" style="color:#eab308">Extraversion</span>
+      <div class="compare-bars">
+        <div class="compare-bar-row">
+          <span class="compare-bar-label">Before</span>
+          <div class="compare-bar-track"><div class="compare-bar-fill" th:style="'width:'+${prevHistory.extraversion}+'%;background:#eab30880'"></div></div>
+          <span class="compare-bar-val" th:text="${prevHistory.extraversion}">0</span>
+        </div>
+        <div class="compare-bar-row">
+          <span class="compare-bar-label">Now</span>
+          <div class="compare-bar-track"><div class="compare-bar-fill" th:style="'width:'+${user.extraversion}+'%;background:#eab308'"></div></div>
+          <span class="compare-bar-val" th:text="${user.extraversion}">0</span>
+          <span th:if="${user.extraversion > prevHistory.extraversion}" class="change-badge change-up" th:text="'+' + (${user.extraversion - prevHistory.extraversion})">+</span>
+          <span th:if="${user.extraversion < prevHistory.extraversion}" class="change-badge change-down" th:text="${user.extraversion - prevHistory.extraversion}">-</span>
+          <span th:if="${user.extraversion == prevHistory.extraversion}" class="change-badge change-same">=</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Agreeableness -->
+    <div class="compare-row">
+      <span class="compare-label" style="color:#22c55e">Agreeableness</span>
+      <div class="compare-bars">
+        <div class="compare-bar-row">
+          <span class="compare-bar-label">Before</span>
+          <div class="compare-bar-track"><div class="compare-bar-fill" th:style="'width:'+${prevHistory.agreeableness}+'%;background:#22c55e80'"></div></div>
+          <span class="compare-bar-val" th:text="${prevHistory.agreeableness}">0</span>
+        </div>
+        <div class="compare-bar-row">
+          <span class="compare-bar-label">Now</span>
+          <div class="compare-bar-track"><div class="compare-bar-fill" th:style="'width:'+${user.agreeableness}+'%;background:#22c55e'"></div></div>
+          <span class="compare-bar-val" th:text="${user.agreeableness}">0</span>
+          <span th:if="${user.agreeableness > prevHistory.agreeableness}" class="change-badge change-up" th:text="'+' + (${user.agreeableness - prevHistory.agreeableness})">+</span>
+          <span th:if="${user.agreeableness < prevHistory.agreeableness}" class="change-badge change-down" th:text="${user.agreeableness - prevHistory.agreeableness}">-</span>
+          <span th:if="${user.agreeableness == prevHistory.agreeableness}" class="change-badge change-same">=</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Neuroticism -->
+    <div class="compare-row">
+      <span class="compare-label" style="color:#a855f7">Neuroticism</span>
+      <div class="compare-bars">
+        <div class="compare-bar-row">
+          <span class="compare-bar-label">Before</span>
+          <div class="compare-bar-track"><div class="compare-bar-fill" th:style="'width:'+${prevHistory.neuroticism}+'%;background:#a855f780'"></div></div>
+          <span class="compare-bar-val" th:text="${prevHistory.neuroticism}">0</span>
+        </div>
+        <div class="compare-bar-row">
+          <span class="compare-bar-label">Now</span>
+          <div class="compare-bar-track"><div class="compare-bar-fill" th:style="'width:'+${user.neuroticism}+'%;background:#a855f7'"></div></div>
+          <span class="compare-bar-val" th:text="${user.neuroticism}">0</span>
+          <span th:if="${user.neuroticism < prevHistory.neuroticism}" class="change-badge change-up" th:text="'↓ ' + (${prevHistory.neuroticism - user.neuroticism}) + ' (better)'">better</span>
+          <span th:if="${user.neuroticism > prevHistory.neuroticism}" class="change-badge change-down" th:text="'↑ ' + (${user.neuroticism - prevHistory.neuroticism}) + ' (worse)'">worse</span>
+          <span th:if="${user.neuroticism == prevHistory.neuroticism}" class="change-badge change-same">=</span>
+        </div>
+      </div>
+    </div>
+
+    <p style="font-size:.8rem;color:var(--muted);margin-top:.5rem">
+      💡 For Neuroticism: lower is better. For all other traits: higher is better.
+    </p>
+  </div>
+
+  <!-- Trait Analysis Cards -->
+  <h2 class="section-heading" style="margin-bottom:1rem">Detailed Trait Analysis</h2>
+
+  <!-- Openness -->
+  <div class="ta-card">
+    <div class="ta-top">
+      <div class="ta-left"><div class="ta-dot" style="background:#f97316"></div>
+        <div><div class="ta-name">Openness to Experience</div><div class="ta-sub">Curiosity · Creativity · New Ideas</div></div>
+      </div>
+      <div class="ta-right">
+        <span class="ta-score-big" style="color:#f97316" th:text="${user.openness}">0</span>
+        <span th:class="${user.openness>=70}?'ta-badge good':(${user.openness}>=40?'ta-badge mid':'ta-badge low')"
+              th:text="${user.openness>=70}?'Strong':(${user.openness}>=40?'Moderate':'Needs Work')">level</span>
+      </div>
+    </div>
+    <div class="ta-bar-wrap"><div class="ta-bar-track"><div class="ta-bar-fill" th:style="'width:'+${user.openness}+'%;background:#f97316'"></div></div></div>
+    <div class="ta-body">
+      <p class="ta-analysis" th:if="${user.openness>=70}"><strong>Excellent!</strong> You are naturally curious, creative, and love exploring new ideas. No improvement needed here — keep embracing novelty and intellectual growth!</p>
+      <p class="ta-analysis" th:if="${user.openness<70 and user.openness>=40}"><strong>Moderate openness.</strong> You have a balanced approach. With a little more effort to explore unfamiliar ideas, you can unlock greater creativity and adaptability.</p>
+      <p class="ta-analysis" th:if="${user.openness<40}"><strong>Low openness needs work.</strong> You prefer routine and familiar situations. This can limit your growth. Start small — try one new thing each week to build this trait.</p>
+      <div th:if="${user.openness<60}">
+        <div class="ta-tasks-title">📋 Your Daily Tasks</div>
+        <div class="ta-tasks">
+          <div class="ta-task"><span class="ta-task-num">1</span>Try one completely new activity today — cook a new dish, take a different route, or learn 5 new words.</div>
+          <div class="ta-task"><span class="ta-task-num">2</span>Read for 20 minutes from a genre you have never tried before.</div>
+          <div class="ta-task"><span class="ta-task-num">3</span>Watch a documentary about a topic you know nothing about.</div>
+          <div class="ta-task"><span class="ta-task-num">4</span>Have a deep conversation with someone whose background differs from yours.</div>
+          <div class="ta-task"><span class="ta-task-num">5</span>Spend 10 minutes writing freely in a journal without limits.</div>
+        </div>
+      </div>
+      <div class="ta-no-improve" th:if="${user.openness>=60}">✅ No daily tasks needed — your Openness is strong!</div>
+    </div>
+  </div>
+
+  <!-- Conscientiousness -->
+  <div class="ta-card">
+    <div class="ta-top">
+      <div class="ta-left"><div class="ta-dot" style="background:#3b82f6"></div>
+        <div><div class="ta-name">Conscientiousness</div><div class="ta-sub">Organization · Discipline · Reliability</div></div>
+      </div>
+      <div class="ta-right">
+        <span class="ta-score-big" style="color:#3b82f6" th:text="${user.conscientiousness}">0</span>
+        <span th:class="${user.conscientiousness>=70}?'ta-badge good':(${user.conscientiousness}>=40?'ta-badge mid':'ta-badge low')"
+              th:text="${user.conscientiousness>=70}?'Strong':(${user.conscientiousness}>=40?'Moderate':'Needs Work')">level</span>
+      </div>
+    </div>
+    <div class="ta-bar-wrap"><div class="ta-bar-track"><div class="ta-bar-fill" th:style="'width:'+${user.conscientiousness}+'%;background:#3b82f6'"></div></div></div>
+    <div class="ta-body">
+      <p class="ta-analysis" th:if="${user.conscientiousness>=70}"><strong>Excellent!</strong> You are highly organized, reliable, and goal-oriented. People count on you and you follow through. No improvement needed!</p>
+      <p class="ta-analysis" th:if="${user.conscientiousness<70 and user.conscientiousness>=40}"><strong>Moderate conscientiousness.</strong> You are reasonably organized but can sometimes struggle with consistency. Stronger daily routines will help you reach goals faster.</p>
+      <p class="ta-analysis" th:if="${user.conscientiousness<40}"><strong>Low conscientiousness needs work.</strong> You may find it hard to stay organized or meet deadlines. Starting with small daily habits can transform your productivity completely.</p>
+      <div th:if="${user.conscientiousness<60}">
+        <div class="ta-tasks-title">📋 Your Daily Tasks</div>
+        <div class="ta-tasks">
+          <div class="ta-task"><span class="ta-task-num">1</span>Write your top 3 tasks before opening your phone. Do them first.</div>
+          <div class="ta-task"><span class="ta-task-num">2</span>Set a 25-minute focus timer — work on one task with zero distractions.</div>
+          <div class="ta-task"><span class="ta-task-num">3</span>Organize one area of your workspace right now.</div>
+          <div class="ta-task"><span class="ta-task-num">4</span>Review your week and plan tomorrow in writing.</div>
+          <div class="ta-task"><span class="ta-task-num">5</span>Track one habit today — even drinking 8 glasses of water counts.</div>
+        </div>
+      </div>
+      <div class="ta-no-improve" th:if="${user.conscientiousness>=60}">✅ No daily tasks needed — your Conscientiousness is strong!</div>
+    </div>
+  </div>
+
+  <!-- Extraversion -->
+  <div class="ta-card">
+    <div class="ta-top">
+      <div class="ta-left"><div class="ta-dot" style="background:#eab308"></div>
+        <div><div class="ta-name">Extraversion</div><div class="ta-sub">Sociability · Energy · Assertiveness</div></div>
+      </div>
+      <div class="ta-right">
+        <span class="ta-score-big" style="color:#eab308" th:text="${user.extraversion}">0</span>
+        <span th:class="${user.extraversion>=70}?'ta-badge good':(${user.extraversion}>=40?'ta-badge mid':'ta-badge low')"
+              th:text="${user.extraversion>=70}?'Strong':(${user.extraversion}>=40?'Ambivert':'Needs Work')">level</span>
+      </div>
+    </div>
+    <div class="ta-bar-wrap"><div class="ta-bar-track"><div class="ta-bar-fill" th:style="'width:'+${user.extraversion}+'%;background:#eab308'"></div></div></div>
+    <div class="ta-body">
+      <p class="ta-analysis" th:if="${user.extraversion>=70}"><strong>Excellent!</strong> You are energized by social interactions and bring positive energy to those around you. No improvement needed!</p>
+      <p class="ta-analysis" th:if="${user.extraversion<70 and user.extraversion>=40}"><strong>You are an ambivert.</strong> Pushing yourself slightly more into social situations will help build stronger connections and confidence.</p>
+      <p class="ta-analysis" th:if="${user.extraversion<40}"><strong>Low extraversion.</strong> While introversion is valid, building social confidence opens many opportunities. Small daily social steps make a big difference over time.</p>
+      <div th:if="${user.extraversion<60}">
+        <div class="ta-tasks-title">📋 Your Daily Tasks</div>
+        <div class="ta-tasks">
+          <div class="ta-task"><span class="ta-task-num">1</span>Smile and start a conversation with at least one new person today.</div>
+          <div class="ta-task"><span class="ta-task-num">2</span>Call or message a friend you haven't spoken to in over a week.</div>
+          <div class="ta-task"><span class="ta-task-num">3</span>Share your opinion clearly in at least one conversation today.</div>
+          <div class="ta-task"><span class="ta-task-num">4</span>Spend 30 minutes in a social setting — a café or common area counts.</div>
+          <div class="ta-task"><span class="ta-task-num">5</span>Give someone a genuine, specific compliment today.</div>
+        </div>
+      </div>
+      <div class="ta-no-improve" th:if="${user.extraversion>=60}">✅ No daily tasks needed — your Extraversion is strong!</div>
+    </div>
+  </div>
+
+  <!-- Agreeableness -->
+  <div class="ta-card">
+    <div class="ta-top">
+      <div class="ta-left"><div class="ta-dot" style="background:#22c55e"></div>
+        <div><div class="ta-name">Agreeableness</div><div class="ta-sub">Empathy · Cooperation · Kindness</div></div>
+      </div>
+      <div class="ta-right">
+        <span class="ta-score-big" style="color:#22c55e" th:text="${user.agreeableness}">0</span>
+        <span th:class="${user.agreeableness>=70}?'ta-badge good':(${user.agreeableness}>=40?'ta-badge mid':'ta-badge low')"
+              th:text="${user.agreeableness>=70}?'Strong':(${user.agreeableness}>=40?'Moderate':'Needs Work')">level</span>
+      </div>
+    </div>
+    <div class="ta-bar-wrap"><div class="ta-bar-track"><div class="ta-bar-fill" th:style="'width:'+${user.agreeableness}+'%;background:#22c55e'"></div></div></div>
+    <div class="ta-body">
+      <p class="ta-analysis" th:if="${user.agreeableness>=70}"><strong>Excellent!</strong> You are empathetic and people feel safe around you. This is a beautiful trait. No improvement needed!</p>
+      <p class="ta-analysis" th:if="${user.agreeableness<70 and user.agreeableness>=40}"><strong>Moderate agreeableness.</strong> More active listening and daily acts of kindness will strengthen your relationships significantly.</p>
+      <p class="ta-analysis" th:if="${user.agreeableness<40}"><strong>Low agreeableness needs work.</strong> You may come across as dismissive. Practicing empathy every day will transform how others perceive you.</p>
+      <div th:if="${user.agreeableness<60}">
+        <div class="ta-tasks-title">📋 Your Daily Tasks</div>
+        <div class="ta-tasks">
+          <div class="ta-task"><span class="ta-task-num">1</span>Practice active listening — phone away, full attention to whoever speaks to you.</div>
+          <div class="ta-task"><span class="ta-task-num">2</span>Do one kind act for someone without expecting anything back.</div>
+          <div class="ta-task"><span class="ta-task-num">3</span>When disagreeing, say "I understand your point, and..." instead of "But..."</div>
+          <div class="ta-task"><span class="ta-task-num">4</span>Write a genuine thank-you message to someone who helped you recently.</div>
+          <div class="ta-task"><span class="ta-task-num">5</span>Offer to help someone with something small today, even if they didn't ask.</div>
+        </div>
+      </div>
+      <div class="ta-no-improve" th:if="${user.agreeableness>=60}">✅ No daily tasks needed — your Agreeableness is strong!</div>
+    </div>
+  </div>
+
+  <!-- Neuroticism -->
+  <div class="ta-card">
+    <div class="ta-top">
+      <div class="ta-left"><div class="ta-dot" style="background:#a855f7"></div>
+        <div><div class="ta-name">Neuroticism</div><div class="ta-sub">Emotional Stability · Stress · Anxiety</div></div>
+      </div>
+      <div class="ta-right">
+        <span class="ta-score-big" style="color:#a855f7" th:text="${user.neuroticism}">0</span>
+        <span th:class="${user.neuroticism<=40}?'ta-badge good':(${user.neuroticism}<=60?'ta-badge mid':'ta-badge low')"
+              th:text="${user.neuroticism<=40}?'Stable':(${user.neuroticism}<=60?'Moderate':'Needs Work')">level</span>
+      </div>
+    </div>
+    <div class="ta-bar-wrap"><div class="ta-bar-track"><div class="ta-bar-fill" th:style="'width:'+${user.neuroticism}+'%;background:#a855f7'"></div></div></div>
+    <div class="ta-body">
+      <p class="ta-analysis" th:if="${user.neuroticism<=40}"><strong>Excellent emotional stability!</strong> You are calm and resilient. No improvement needed — this is one of your key strengths!</p>
+      <p class="ta-analysis" th:if="${user.neuroticism>40 and user.neuroticism<=60}"><strong>Moderate neuroticism.</strong> You occasionally feel anxious but generally manage well. Daily stress-management habits will make you even more resilient.</p>
+      <p class="ta-analysis" th:if="${user.neuroticism>60}"><strong>High neuroticism needs attention.</strong> Frequent anxiety and emotional ups/downs affect your happiness and productivity. The daily tasks below will help step by step.</p>
+      <div th:if="${user.neuroticism>60}">
+        <div class="ta-tasks-title">📋 Your Daily Tasks</div>
+        <div class="ta-tasks">
+          <div class="ta-task"><span class="ta-task-num">1</span>Do 5 minutes of box breathing: inhale 4s, hold 4s, exhale 4s, hold 4s.</div>
+          <div class="ta-task"><span class="ta-task-num">2</span>Write 3 things you are genuinely grateful for before sleeping tonight.</div>
+          <div class="ta-task"><span class="ta-task-num">3</span>Go for a 20-minute walk outside — no phone, just breathe.</div>
+          <div class="ta-task"><span class="ta-task-num">4</span>Limit social media to 30 minutes total today.</div>
+          <div class="ta-task"><span class="ta-task-num">5</span>Write one worry down, then ask: can I act on this now? If not, let it go.</div>
+        </div>
+      </div>
+      <div class="ta-no-improve" th:if="${user.neuroticism<=60}">✅ No daily tasks needed — your emotional stability is good!</div>
+    </div>
+  </div>
+
+  <!-- Summary -->
+  <div class="section-card" th:if="${!weakTraits.isEmpty()}" style="margin-top:1rem">
+    <h2 class="section-title">Traits Needing Improvement</h2>
+    <p style="color:var(--muted);font-size:.88rem;margin-bottom:.85rem">Go to your dashboard every day and complete at least one task per trait to build your global streak!</p>
+    <div class="weak-tags">
+      <span class="weak-tag" th:each="t : ${weakTraits}" th:text="${t}">Trait</span>
+    </div>
+  </div>
+
+  <div class="section-card" th:if="${weakTraits.isEmpty()}" style="margin-top:1rem;text-align:center">
+    <div style="font-size:3rem;margin-bottom:.5rem">🏆</div>
+    <h3 style="color:#166534;margin-bottom:.5rem">All traits are well balanced!</h3>
+    <p style="color:#64748b">Keep maintaining your habits daily!</p>
+  </div>
+
+  <div style="text-align:center;margin-top:1.5rem;padding-bottom:2rem">
+    <a href="/dashboard" class="btn-primary">Go to Dashboard & Start Tasks →</a>
+  </div>
+
+</main>
+<footer class="app-footer">✦ Psyche Personality Tracker</footer>
+</body>
+</html>

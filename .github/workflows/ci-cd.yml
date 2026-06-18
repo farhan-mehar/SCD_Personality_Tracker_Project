@@ -21,23 +21,23 @@ jobs:
 
       - name: Build and run tests with Maven
         run: mvn clean package -B
-        shell: pwsh
+        shell: powershell
 
       - name: Stop existing containers
         run: docker compose down
-        shell: pwsh
+        shell: powershell
         continue-on-error: true
 
       - name: Build and start containers
         run: docker compose up -d --build
-        shell: pwsh
+        shell: powershell
 
       - name: Wait for app to be healthy
         run: |
           Start-Sleep -Seconds 30
           docker ps
-        shell: pwsh
+        shell: powershell
 
       - name: Show app logs
         run: docker logs psyche-app --tail 80
-        shell: pwsh
+        shell: powershell

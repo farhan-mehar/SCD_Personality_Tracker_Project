@@ -23,8 +23,11 @@ jobs:
         run: mvn clean package -B
         shell: powershell
 
-      - name: Stop existing containers
-        run: docker compose down
+      - name: Stop and remove existing containers
+        run: |
+          docker compose down
+          docker rm -f psyche-mysql 2>$null
+          docker rm -f psyche-app 2>$null
         shell: powershell
         continue-on-error: true
 

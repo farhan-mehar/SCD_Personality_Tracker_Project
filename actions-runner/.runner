@@ -1,0 +1,11 @@
+﻿{
+  "agentId": 21,
+  "agentName": "CLIENT1",
+  "poolId": 1,
+  "poolName": "Default",
+  "serverUrl": "https://pipelinesghubeus13.actions.githubusercontent.com/4q48m1LS84WfgvLrZX3NxmKUpXfUKT0mqFmgzVYb9yWZHH122O/",
+  "gitHubUrl": "https://github.com/farhan-mehar/SCD_Personality_Tracker_Project",
+  "workFolder": "_work",
+  "useV2Flow": true,
+  "serverUrlV2": "https://broker.actions.githubusercontent.com/"
+}
